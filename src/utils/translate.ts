@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { FromLanguage } from '../scenes/TranslatorApp/useTranslate';
-import { AUTO_LENGUAGE, Language } from './language';
+import { Language } from './language';
 
 const headers = {
   'Content-Type': 'application/json',
@@ -28,7 +28,7 @@ const translatorPromptRules = [
 ];
 const profile = concatenateSentences(translatorPromptRules);
 
-async function translate({ fromLanguage, text, toLanguage }: Input) {
+export async function translate({ fromLanguage, text, toLanguage }: Input) {
   if (fromLanguage === toLanguage) return text;
 
   const data = {
@@ -44,7 +44,7 @@ async function translate({ fromLanguage, text, toLanguage }: Input) {
     ],
     model: 'gpt-4o',
     temperature: 1,
-    max_tokens: 3000,
+    max_tokens: 1256,
     top_p: 1,
     frequency_penalty: 0,
     presence_penalty: 0
