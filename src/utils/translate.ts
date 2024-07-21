@@ -1,27 +1,21 @@
-import {
-  ChatCompletionRequestMessageRoleEnum,
-  Configuration,
-  OpenAIApi,
-} from 'openai'
-import { FromLanguage } from '../scenes/TranslatorApp/useTranslate'
-import { AUTO_LENGUAGE, Language } from './language'
+import axios from 'axios';
+import { FromLanguage } from '../scenes/TranslatorApp/useTranslate';
+import { AUTO_LENGUAGE, Language } from './language';
 
-const OPEN_AI_API_KEY = 'XXXXXXXX'
-
-// TODO: Migrate it to a server!
-const configuration = new Configuration({
-  apiKey: OPEN_AI_API_KEY,
-})
-const openai = new OpenAIApi(configuration)
+const headers = {
+  'Content-Type': 'application/json',
+  'User-Agent': 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Mobile Safari/537.36',
+  'Referer': 'https://omniplex.ai/'
+};
 
 interface Input {
-  fromLanguage: FromLanguage
-  toLanguage: Language
-  text: string
+  fromLanguage: FromLanguage;
+  toLanguage: Language;
+  text: string;
 }
 
 function concatenateSentences(strings: string[]): string {
-  return strings.join('. ') + '.'
+  return strings.join('. ') + '.';
 }
 
 const translatorPromptRules = [
@@ -30,56 +24,37 @@ const translatorPromptRules = [
   'The original language is surrounded by `{{` and `}}`',
   'You can also receive {{auto}} which means that you have to detect the language',
   'You can translate to any language',
-  'The laguage you translate is surrounded by `[[` and `]]`',
-]
-const content = concatenateSentences(translatorPromptRules)
+  'The language you translate is surrounded by `[[` and `]]`'
+];
+const profile = concatenateSentences(translatorPromptRules);
 
-const Role = ChatCompletionRequestMessageRoleEnum
+async function translate({ fromLanguage, text, toLanguage }: Input) {
+  if (fromLanguage === toLanguage) return text;
 
-export async function translate({ fromLanguage, text, toLanguage }: Input) {
-  if (fromLanguage === toLanguage) return text
-
-  const messages = [
-    {
-      role: Role.System,
-      content,
-    },
-    {
-      role: Role.User,
-      content: `Hola mundo {{${Language.Spanish}}} [[${Language.English}]]`,
-    },
-    {
-      role: Role.Assistant,
-      content: `Hello world`,
-    },
-    {
-      role: Role.User,
-      content: `How are you? {{${AUTO_LENGUAGE}}} [[${Language.German}]]`,
-    },
-    {
-      role: Role.Assistant,
-      content: `Wie geht es dir?`,
-    },
-    {
-      role: Role.User,
-      content: `Bom Dia como está? {{${AUTO_LENGUAGE}}} [[${Language.English}]]`,
-    },
-    {
-      role: Role.Assistant,
-      content: `Good morning, how are you?`,
-    },
-  ]
-
-  const completion = await openai.createChatCompletion({
-    model: 'gpt-3.5-turbo',
+  const data = {
     messages: [
-      ...messages,
       {
-        role: Role.User,
-        content: `${text} {{${fromLanguage}}} [[${toLanguage}]]`,
+        role: 'system',
+        content: profile
       },
+      {
+        role: 'user',
+        content: `${text} {{${fromLanguage}}} [[${toLanguage}]]`
+      }
     ],
-  })
+    model: 'gpt-4o',
+    temperature: 1,
+    max_tokens: 3000,
+    top_p: 1,
+    frequency_penalty: 0,
+    presence_penalty: 0
+  };
 
-  return completion.data.choices[0].message?.content
+  try {
+    const response = await axios.post('https://omniplex.ai/api/chat', data, { headers });
+    return response.data.choices[0]?.message?.content || 'Translation error: No content found';
+  } catch (error) {
+    console.error('Translation error:', error);
+    throw new Error('Translation error');
+  }
 }
