@@ -1,49 +1,57 @@
-import 'bootstrap/dist/css/bootstrap.min.css'
-import './styles.css'
-import { useTranslate } from './useTranslate'
-import { Button, Col, Container, Row, Stack } from 'react-bootstrap'
-import { SwapArrowsIcon } from '../../components/SwapArrowsIcon'
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './styles.css';
+import { useTranslate } from './useTranslate';
+import { Button, Col, Container, Row, Stack } from 'react-bootstrap';
+import { SwapArrowsIcon } from '../../components/SwapArrowsIcon';
 import {
   AUTO_LENGUAGE,
   SectionType,
   getVoiceLanguage,
-} from '../../utils/language'
-import { LanguageSelector } from '../../components/LanguageSelector'
-import { TextArea } from '../../components/TextArea'
-import { useEffect } from 'react'
-import { translate } from '../../utils/translate'
-import { useDebounce } from './useDebounce'
-import { CopyIcon } from '../../components/CopyIcon'
-import { SpeakerIcon } from '../../components/SpeakerIcon'
+} from '../../utils/language';
+import { LanguageSelector } from '../../components/LanguageSelector';
+import { TextArea } from '../../components/TextArea';
+import { useEffect } from 'react';
+import { translate } from '../../utils/translate';
+import { useDebounce } from './useDebounce';
+import { CopyIcon } from '../../components/CopyIcon';
+import { SpeakerIcon } from '../../components/SpeakerIcon';
+import { AxiosResponse } from 'axios'; // Ensure axios types are imported
 
 const TranslatorApp: React.FC = () => {
-  const { handlers, state } = useTranslate()
+  const { handlers, state } = useTranslate();
 
-  const debouncedFromText = useDebounce(state.fromText)
+  const debouncedFromText = useDebounce(state.fromText);
 
   useEffect(() => {
-    if (debouncedFromText === '') return
+    if (debouncedFromText === '') return;
 
     translate({
       fromLanguage: state.fromLanguage,
       text: debouncedFromText,
       toLanguage: state.toLanguage,
     })
-      .then(res => {
-        if (!res) return
+      .then((res: string | undefined) => {
+        if (!res) return;
 
-        handlers.setResult(res)
+        handlers.setResult(res);
       })
-      .catch(error => console.error(error))
-  }, [debouncedFromText, state.fromLanguage, state.toLanguage])
+      .catch((error: Error) => console.error(error));
+  }, [debouncedFromText, state.fromLanguage, state.toLanguage]);
 
-  const handleClipboard = () => navigator.clipboard.writeText(state.result)
+  const handleClipboard = () => {
+    if (state.result) {
+      navigator.clipboard.writeText(state.result);
+    }
+  };
+
   const handleSpeak = () => {
-    const utterance = new SpeechSynthesisUtterance(state.result)
-    utterance.lang = getVoiceLanguage(state.toLanguage)
-    utterance.rate = 0.8
-    speechSynthesis.speak(utterance)
-  }
+    if (state.result) {
+      const utterance = new SpeechSynthesisUtterance(state.result);
+      utterance.lang = getVoiceLanguage(state.toLanguage);
+      utterance.rate = 0.8;
+      speechSynthesis.speak(utterance);
+    }
+  };
 
   return (
     <Container fluid>
@@ -69,7 +77,8 @@ const TranslatorApp: React.FC = () => {
           <Button
             disabled={state.fromLanguage === AUTO_LENGUAGE}
             onClick={handlers.interchangeLanguage}
-            variant="link">
+            variant="link"
+          >
             <SwapArrowsIcon />
           </Button>
         </Col>
@@ -100,7 +109,7 @@ const TranslatorApp: React.FC = () => {
         </Col>
       </Row>
     </Container>
-  )
-}
+  );
+};
 
-export default TranslatorApp
+export default TranslatorApp;
